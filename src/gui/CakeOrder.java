@@ -40,16 +40,12 @@ public class CakeOrder extends JFrame{
             button.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    if (label.equals("종료")) {
-                        System.exit(0);
-                    } else {
-                        JOptionPane.showMessageDialog(
-                            CakeOrder.this,
-                            label + " 기능이 호출되었습니다.",
-                            "알림",
-                            JOptionPane.INFORMATION_MESSAGE
-                        );
-                    }
+                    if (label.equals("케이크 주문")){addOrder();}
+                    else if (label.equals("전체 주문 목록 조회")){}
+                    else if (label.equals("현재 주문 상세 내역")){}
+                    else if (label.equals("주문 수정")){}
+                    else if (label.equals("고객 정보 수정")){}
+                    else {System.exit(0);}
                 }
             });
 
@@ -62,6 +58,10 @@ public class CakeOrder extends JFrame{
         add(buttonPanel, BorderLayout.CENTER);
 	}
 	
+    private void addOrder() {
+        throw new UnsupportedOperationException("Unimplemented method 'addOrder'");
+    }
+
 	public static void main(String[] args) {
 		SwingUtilities.invokeLater(() -> {
             new CakeOrder().setVisible(true);

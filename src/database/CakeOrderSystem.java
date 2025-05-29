@@ -3,6 +3,8 @@ package database;
 import java.sql.*;
 import java.util.InputMismatchException;
 import java.util.Scanner;
+import javax.swing.JOptionPane;
+import java.time.LocalDate;
 
 public class CakeOrderSystem {
 
@@ -17,6 +19,11 @@ public class CakeOrderSystem {
 	
 	public static void 메뉴() {
 		Scanner scanner = new Scanner(System.in);
+
+		// 초기 인덱스 값 세팅
+		int order_index = 11;
+		int customer_index = 11;
+		int orderitem_index = 17;
 		
 		System.out.println("1. 케이크 주문하기");
 		System.out.println("2. 전체 주문 목록 조회");
@@ -68,13 +75,17 @@ public class CakeOrderSystem {
 	}
 	
 	private static void addOrder(){
+		// 케이크 메뉴 및 재고 현황
 		Scanner sc = new Scanner(System.in);
-    System.out.print("주문 ID: ");
-    String orderId = sc.nextLine();
-    System.out.print("고객 ID: ");
-    String customerId = sc.nextLine();
-    System.out.print("주문 날짜 (YYYY-MM-DD): ");
-    String date = sc.nextLine();
+    LocalDate now = LocalDate.now();
+
+		while (true) {
+			System.out.println("주문할 케이크 ID를 입력하세요(ex):C001):");
+			String cakeID = sc.nextLine();
+		}
+   
+}
+
 
     String query = "INSERT INTO orders (orders_id, customer_id, orders_date) VALUES (?, ?, ?)";
 		//    try (Connection conn = DBConnection.getConnection(); PreparedStatement pstmt = conn.prepareStatement(query)) {
@@ -83,7 +94,7 @@ public class CakeOrderSystem {
     //    pstmt.setDate(3, Date.valueOf(date));
     //    pstmt.executeUpdate();
     //    System.out.println("주문이 추가되었습니다.");
-        }	
+    //    }	
 	}
 
 	private static void updateCustomer() {
