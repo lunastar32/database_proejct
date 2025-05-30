@@ -130,10 +130,73 @@ public class CakeOrderSystem {
 		// TODO Auto-generated method stub
 		
 	}
-
-	private static void updateOrder(Connection conn) {
-		// TODO Auto-generated method stub
+	
+	//주문 정보 수정 또는 삭제 
+	private static void updateOrder(Connection conn) {	
+		Scanner sc = new Scanner(System.in);
 		
+		//주 번호 조회
+		System.out.print("수정 또는 삭제할 주문 ID를 입력하세요 (ex: O001): ");
+		String orderId = sc.nextLine();
+
+		System.out.print("1.주문 삭제 ");
+		System.out.println("2.주문 정보 수정 (주문한 케이크 수량 변경)");
+		
+		int choice = Integer.parseInt(sc.nextLine());
+		
+		// 주문 삭제 선택 
+		if (choice == 1) { 
+			try {
+				// order item 테이블에서 해당 주문번호 삭제
+				String deleteItemsSQL = "DELETE FROM orderitem WHERE orders_id = ?";
+				try (PreparedStatement stmt = conn.prepareStatement(deleteItemsSQL)) {
+					stmt.setString(1, orderId);
+					stmt.executeUpdate();
+				}
+				// orders 테이블에서 해당 주문번호 삭제
+				String deleteOrderSQL = "DELETE FROM orders WHERE orders_id = ?";
+				try (PreparedStatement stmt = conn.prepareStatement(deleteOrderSQL)) {
+					stmt.setString(1, orderId);
+					stmt.executeUpdate();
+				}
+				System.out.println("주문이 삭제되었습니다.");
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+				
+		// 주문 내역 수정 선택
+		} else if (choice == 2) {
+			System.out.print("수정하고 싶은 케이크 ID를 입력하세요 (ex: C001): ");
+			String oldCakeId = sc.nextLine();
+			
+			System.out.println("새로운 케이크 ID를 입력하세요 (케이크 종류를 변경하지 않는다면 기존의 케이크 ID를 적어주세요): ");
+			String newCakeId = sc.nextLine();
+			
+			if (!isValidCakeId(conn, newCakeId)) {
+				System.out.println("케이크 ID가 존재하지 않습니다.");
+				return;
+			}
+				
+			System.out.print("새로운 수량을 입력하세요: ");
+			int newQty = Integer.parseInt(sc.nextLine());
+
+			String updateSQL = "UPDATE orderitem SET cake_id = ?, quantity = ? WHERE orders_id = ? AND cake_id = ?";
+			try (PreparedStatement stmt = conn.prepareStatement(updateSQL)) {
+				stmt.setString(1, newCakeId);
+				stmt.setInt(2, newQty);
+				stmt.setString(3, orderId);
+				stmt.setString(4, oldCakeId);
+				
+				int rows = stmt.executeUpdate();
+				if (rows > 0) {
+					System.out.println("주문이 수정되었습니다.");
+				} else {
+					System.out.println("해당 주문 또는 케이크 ID를 찾을 수 없습니다.");
+				}
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		}
 	}
 
 	private static void showOrderDetail(Connection conn, String orderId) {
