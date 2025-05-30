@@ -180,7 +180,7 @@ public class CakeOrderSystem {
 			System.out.print("새로운 수량을 입력하세요: ");
 			int newQty = Integer.parseInt(sc.nextLine());
 
-			String updateSQL = "UPDATE orderitem SET quantity = ? WHERE orders_id = ? AND cake_id = ?";
+			String updateSQL = "UPDATE orderitem SET cake_id = ?, quantity = ? WHERE orders_id = ? AND cake_id = ?";
 			try (PreparedStatement stmt = conn.prepareStatement(updateSQL)) {
 				stmt.setString(1, newCakeId);
 				stmt.setInt(2, newQty);
