@@ -21,7 +21,7 @@ public class CakeOrderSystem {
 		System.out.println();
 	}
 	
-	public static void 메뉴() {
+	public static void 메뉴(Connection conn) {
 		Scanner scanner = new Scanner(System.in);
 		
 		System.out.println("1. 케이크 주문하기");
@@ -48,23 +48,23 @@ public class CakeOrderSystem {
 		
 		switch (choice) {
         case 1: // 케이크 주문하기
-					addOrder();
+					addOrder(conn);
         	break;
         case 2: // 전체 주문 목록 조회
-        	System.out.println("이름을 입력해주세요: ");
+					System.out.println("이름을 입력해주세요: ");
         	String name = scanner.nextLine();
-        	showCustomerOrder(name);
+        	showCustomerOrder(conn, name);
         	break;
         case 3: // 현재 주문 내역 조회
         	System.out.println("주문 ID 입력: ");
         	String orderId = scanner.nextLine();
-        	showOrderDetail(orderId);
+        	showOrderDetail(conn, orderId);
         	break;
         case 4:
-        	updateOrder();
+        	updateOrder(conn);
         	break;
         case 5:
-        	updateCustomer();
+        	updateCustomer(conn);
         	break;
         case 0:
         	return;
@@ -73,11 +73,10 @@ public class CakeOrderSystem {
 		}
 	}
 	
-	private static void addOrder(){
+	private static void addOrder(Connection conn){
 		// 케이크 메뉴 및 재고 현황 출력 
 
 		Scanner sc = new Scanner(System.in);
-		Connection conn = sql_connection.getConnection(); // DB 연결
 
 		// 고객 정보 추가
 		System.out.print("이름을 입력하세요: ");
@@ -127,22 +126,22 @@ public class CakeOrderSystem {
 
 
 
-	private static void updateCustomer() {
+	private static void updateCustomer(Connection conn) {
 		// TODO Auto-generated method stub
 		
 	}
 
-	private static void updateOrder() {
+	private static void updateOrder(Connection conn) {
 		// TODO Auto-generated method stub
 		
 	}
 
-	private static void showOrderDetail(String orderId) {
+	private static void showOrderDetail(Connection conn, String orderId) {
 		// TODO Auto-generated method stub
 		
 	}
 
-	private static void showCustomerOrder(String name) {
+	private static void showCustomerOrder(Connection conn, String name) {
 		// TODO Auto-generated method stub
 		
 	}
@@ -236,9 +235,9 @@ public class CakeOrderSystem {
 		}
 
 	public static void main(String[] args) {
-		sql_connection.getConnection();
+		Connection conn = sql_connection.getConnection();
 		초기화면();
-		메뉴();
+		메뉴(conn); // DB 연결 이어서 가져감
 		sql_connection.close();
 	}
 
