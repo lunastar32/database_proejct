@@ -255,7 +255,7 @@ public class CakeOrderSystem {
 			System.out.print("수정하고 싶은 케이크 ID를 입력하세요 (ex: C001): ");
 			String oldCakeId = sc.nextLine();
 					
-			System.out.println("새로운 케이크 ID를 입력하세요 (케이크 종류를 변경하지 않는다면 기존의 케이크 ID를 적어주세요): ");
+			System.out.println("새로운 케이크 ID를 입력하세요 (변경하지 않는다면 기존 케이크 ID 입력): ");
 			String newCakeId = sc.nextLine();
 					
 			if (!isValidCakeId(conn, newCakeId)) {
@@ -285,11 +285,124 @@ public class CakeOrderSystem {
 		}
 	}
 	
-	// case 5 : 고객 정보 수정
+	// case 5: 고객 정보 삭제 및 수정 기능 
 	private static void updateCustomer(Connection conn) {
-		// TODO Auto-generated method stub
+		Scanner sc = new Scanner(System.in);
+		String customerId = null;
 		
+		while(true) {
+			System.out.print("수정 또는 삭제할 고객 ID를 입력하세요(ex: U001, ID 찾기를 원하시면 '검색' 을 입력하세요): ");
+			String input = sc.nextLine();
+			
+			//ID찾기 선택
+			if (input.equalsIgnoreCase("검색")) {
+				// 고객 이름으로 ID 검색
+				System.out.print("고객 이름을 입력하세요: ");
+				String name = sc.nextLine();
+
+				String searchSQL = "SELECT customer_id, name, phone_number FROM customer WHERE name = ?";
+				try (PreparedStatement stmt = conn.prepareStatement(searchSQL)) {
+					stmt.setString(1, name);
+					try (ResultSet rs = stmt.executeQuery()) {
+						boolean found = false;
+						while (rs.next()) {
+							found = true;
+							String c_id = rs.getString("customer_id");
+							String c_name = rs.getString("name");
+							String phone_num = rs.getString("phone_number");
+
+							// 전화번호 가운데 4자리 *로 마스킹 후 customer id, 이름, 전화번호 출력
+							String masked_num = phone_num.replaceAll("(\\d{3})-(\\d{4})-(\\d{4})", "$1-****-$3");
+
+							System.out.printf("고객 ID: %s, 이름: %s, 전화번호: %s\n", c_id, c_name, masked_num);
+						}
+						if (!found) {
+							System.out.println("해당 이름의 고객이 존재하지 않습니다.");
+						}
+					}
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
+				// ID 검색 이후 다시 고객 ID 입력으로 돌아감
+				// 고객 ID 입력시 while문 종료. 다음 단계로 넘어감.
+			} else {
+				customerId = input;
+				break;
+			}
+		}
+
+		// 고객 ID 확인
+		String query = "SELECT name FROM customer WHERE customer_id = ?";
+		try (PreparedStatement stmt = conn.prepareStatement(query)) {
+			stmt.setString(1, customerId);
+			try (ResultSet rs = stmt.executeQuery()) {
+				if (!rs.next()) {
+					System.out.println("해당 고객 ID가 존재하지 않습니다.");
+					return;
+				}
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return;
+		}
+		
+		// 삭제 또는 수정 선택
+		System.out.print("1.고객 정보 삭제 ");
+		System.out.println("2.고객 정보 수정");
+		int choice = Integer.parseInt(sc.nextLine());
+
+		// 고객 정보 삭제 선택
+		if (choice == 1) {
+			try {
+				// orderitem 에서 해당 고객의 주문 항목 삭제
+				String deleteOrderItems = "DELETE FROM orderitem WHERE orders_id IN (SELECT orders_id FROM orders WHERE customer_id = ?)";
+				try (PreparedStatement stmt = conn.prepareStatement(deleteOrderItems)) {
+					stmt.setString(1, customerId);
+					stmt.executeUpdate();
+				}
+
+				// orders 에서 해당 고객의 주문 정보 삭제
+				String deleteOrders = "DELETE FROM orders WHERE customer_id = ?";
+				try (PreparedStatement stmt = conn.prepareStatement(deleteOrders)) {
+					stmt.setString(1, customerId);
+					stmt.executeUpdate();
+				}
+
+				// customer 에서 해당 고객 정보 삭제
+				String deleteCustomer = "DELETE FROM customer WHERE customer_id = ?";
+				try (PreparedStatement stmt = conn.prepareStatement(deleteCustomer)) {
+					stmt.setString(1, customerId);
+					stmt.executeUpdate();
+				}
+
+				System.out.println("고객 정보 및 관련 주문이 모두 삭제되었습니다.");
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		} 
+		// 고객 정보 수정 선택
+		else if (choice == 2) {
+			System.out.print("새 이름을 입력하세요(변경하지 않는다면 동일한 이름 입력): "); // 이름 수정
+			String newName = sc.nextLine();
+			System.out.print("새 전화번호를 입력하세요(변경하지 않는다면 동일한 번호 입력): "); // 전화번호 수정
+			String newPhone = sc.nextLine();
+
+			String updateSQL = "UPDATE customer SET name = ?, phone_number = ? WHERE customer_id = ?"; // 테이블에 수정사항 업데이트
+			try (PreparedStatement stmt = conn.prepareStatement(updateSQL)) {
+				stmt.setString(1, newName);
+				stmt.setString(2, newPhone);
+				stmt.setString(3, customerId);
+				stmt.executeUpdate();
+
+				System.out.println("고객 정보가 수정되었습니다.");
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		} else {
+			System.out.println("잘못된 선택입니다.");
+		}
 	}
+
 
 	
 
