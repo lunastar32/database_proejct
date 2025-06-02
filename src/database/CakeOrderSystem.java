@@ -55,15 +55,15 @@ public class CakeOrderSystem {
         	String name = scanner.nextLine();
         	showCustomerOrder(conn, name);
         	break;
-        case 3: // 현재 주문 내역 조회
+        case 3: // 현재 주문 내역 상세
         	System.out.println("주문 ID 입력: ");
         	String orderId = scanner.nextLine();
         	showOrderDetail(conn, orderId);
         	break;
-        case 4:
+        case 4: // 주문 수정
         	updateOrder(conn);
         	break;
-        case 5:
+        case 5: //고객 정보 수정
         	updateCustomer(conn);
         	break;
         case 0:
@@ -73,6 +73,7 @@ public class CakeOrderSystem {
 		}
 	}
 	
+	// case 1 : 케이크 주문하기
 	private static void addOrder(Connection conn){
 		// 케이크 메뉴 및 재고 현황 출력 
 
@@ -124,14 +125,98 @@ public class CakeOrderSystem {
 		}
 	}
 
+	// case 2 : 전체 주문 목록 조회 - - orders_ID와 orders_date 확인가능
+	private static void showCustomerOrder(Connection conn, String customerName) {
+	    String getCustomerIdSQL = "SELECT customer_id FROM customer WHERE name = ?";
+	    String getOrdersSQL = "SELECT orders_id, orders_date FROM orders WHERE customer_id = ?";
 
+	    try (PreparedStatement getCustomerStmt = conn.prepareStatement(getCustomerIdSQL)) {
+	        getCustomerStmt.setString(1, customerName);
+	        try (ResultSet customerRs = getCustomerStmt.executeQuery()) {
+	            if (customerRs.next()) { // customerRs에 결과가 존재하면
+	                String customerId = customerRs.getString("customer_id");
 
-	private static void updateCustomer(Connection conn) {
-		// TODO Auto-generated method stub
-		
+	                try (PreparedStatement getOrdersStmt = conn.prepareStatement(getOrdersSQL)) {
+	                    getOrdersStmt.setString(1, customerId);
+	                    try (ResultSet ordersRs = getOrdersStmt.executeQuery()) { // customer_id를 조건으로 해서 다시 결과 검색
+	                        System.out.println("\n[주문 목록]");
+	                        boolean hasOrders = false;
+	                        while (ordersRs.next()) { // 결과가 존재하면 하나씩 출력
+	                            String orderId = ordersRs.getString("orders_id");
+	                            Date orderDate = ordersRs.getDate("orders_date");
+
+	                            System.out.println("• 주문 ID: " + orderId + " | 주문 날짜: " + orderDate);
+	                            hasOrders = true;
+	                        }
+	                        if (!hasOrders) { // 결과가 존재하지 않으면
+	                            System.out.println("고객님의 주문 내역이 존재하지 않습니다.");
+	                        }
+	                    }
+	                }
+	            } else { // 입력한 이름이 database에 없다면
+	                System.out.println("해당 이름의 고객이 존재하지 않습니다.");
+	            }
+	        }
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	    }
 	}
-	
-	//주문 정보 수정 또는 삭제 
+
+	// case 3 : 현재 주문 내역 상세 - orders_id, 전체 수량, 총 가격
+	private static void showOrderDetail(Connection conn, String orderId) {
+	    String orderInfoSQL = "SELECT o.orders_date, c.name AS customer_name " +
+                "FROM orders o " +
+                "JOIN customer c ON o.customer_id = c.customer_id " +
+                "WHERE o.orders_id = ?";
+
+	    String orderItemsSQL = "SELECT ca.name AS cake_name, ca.price, oi.quantity " +
+                 "FROM orderitem oi " +
+                 "JOIN cake ca ON oi.cake_id = ca.cake_id " +
+                 "WHERE oi.orders_id = ?";
+
+	    try (
+	    	PreparedStatement orderInfoStmt = conn.prepareStatement(orderInfoSQL);
+	    	PreparedStatement orderItemsStmt = conn.prepareStatement(orderItemsSQL)
+	    ) {
+	    	// 1. 주문 기본 정보 조회
+	    	orderInfoStmt.setString(1, orderId);
+	    	try (ResultSet orderInfoRs = orderInfoStmt.executeQuery()) {
+	    		if (orderInfoRs.next()) {
+	    			String customerName = orderInfoRs.getString("customer_name");
+	    			Date orderDate = orderInfoRs.getDate("orders_date");
+
+	    			System.out.println("\n[주문 상세 내역]");
+	    			System.out.println("고객 이름: " + customerName);
+	    			System.out.println("주문 날짜: " + orderDate);
+	    			System.out.println("---------------");
+
+	    			// 2. 주문한 케이크 목록 조회
+	    			orderItemsStmt.setString(1, orderId);
+	    			try (ResultSet itemRs = orderItemsStmt.executeQuery()) {
+	    				int total = 0;
+	    				while (itemRs.next()) {
+	    					String cakeName = itemRs.getString("cake_name");
+	    					int price = itemRs.getInt("price");
+	    					int quantity = itemRs.getInt("quantity");
+	    					int subtotal = price * quantity;
+	    					total += subtotal;
+
+	    					System.out.printf("케이크: %s | 가격: %d | 수량: %d | 소계: %d\n", cakeName, price, quantity, subtotal);
+	    				}
+	    				System.out.println("---------------");
+	    				System.out.println("[총 주문 금액]: " + total + "원");
+	    			}
+
+	    		} else {
+	    			System.out.println("해당 주문ID의 정보가 존재하지 않습니다.");
+	    		}
+	    	}
+	    } catch (SQLException e) {
+	    	e.printStackTrace();
+	    }		
+	}	
+
+	// case 4 : 주문 정보 수정 또는 삭제 
 	private static void updateOrder(Connection conn) {	
 		Scanner sc = new Scanner(System.in);
 		
@@ -141,9 +226,9 @@ public class CakeOrderSystem {
 
 		System.out.print("1.주문 삭제 ");
 		System.out.println("2.주문 정보 수정 (주문한 케이크 수량 변경)");
-		
+			
 		int choice = Integer.parseInt(sc.nextLine());
-		
+
 		// 주문 삭제 선택 
 		if (choice == 1) { 
 			try {
@@ -153,6 +238,7 @@ public class CakeOrderSystem {
 					stmt.setString(1, orderId);
 					stmt.executeUpdate();
 				}
+			
 				// orders 테이블에서 해당 주문번호 삭제
 				String deleteOrderSQL = "DELETE FROM orders WHERE orders_id = ?";
 				try (PreparedStatement stmt = conn.prepareStatement(deleteOrderSQL)) {
@@ -163,20 +249,20 @@ public class CakeOrderSystem {
 			} catch (SQLException e) {
 				e.printStackTrace();
 			}
-				
+		}			
 		// 주문 내역 수정 선택
-		} else if (choice == 2) {
+		else if (choice == 2) {
 			System.out.print("수정하고 싶은 케이크 ID를 입력하세요 (ex: C001): ");
 			String oldCakeId = sc.nextLine();
-			
+					
 			System.out.println("새로운 케이크 ID를 입력하세요 (케이크 종류를 변경하지 않는다면 기존의 케이크 ID를 적어주세요): ");
 			String newCakeId = sc.nextLine();
-			
+					
 			if (!isValidCakeId(conn, newCakeId)) {
 				System.out.println("케이크 ID가 존재하지 않습니다.");
 				return;
 			}
-				
+						
 			System.out.print("새로운 수량을 입력하세요: ");
 			int newQty = Integer.parseInt(sc.nextLine());
 
@@ -186,7 +272,7 @@ public class CakeOrderSystem {
 				stmt.setInt(2, newQty);
 				stmt.setString(3, orderId);
 				stmt.setString(4, oldCakeId);
-				
+						
 				int rows = stmt.executeUpdate();
 				if (rows > 0) {
 					System.out.println("주문이 수정되었습니다.");
@@ -198,16 +284,14 @@ public class CakeOrderSystem {
 			}
 		}
 	}
-
-	private static void showOrderDetail(Connection conn, String orderId) {
+	
+	// case 5 : 고객 정보 수정
+	private static void updateCustomer(Connection conn) {
 		// TODO Auto-generated method stub
 		
 	}
 
-	private static void showCustomerOrder(Connection conn, String name) {
-		// TODO Auto-generated method stub
-		
-	}
+	
 
 	// 입력한 cakeID가 DB에 존재하는지 확인하는 함수
 	public static boolean isValidCakeId(Connection conn, String cakeId) {

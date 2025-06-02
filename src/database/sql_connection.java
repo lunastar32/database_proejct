@@ -18,8 +18,8 @@ public class sql_connection {
     if(conn == null) {
       try {
          Class.forName("com.mysql.cj.jdbc.Driver");
-         System.out.println("DB 연결 성공");
          conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/cake1", "root", "estherpark1017m");
+         System.out.println("DB 연결 성공");
       } catch (SQLException | ClassNotFoundException var1) {
         System.out.println("DB 연결 실패"); 
         var1.printStackTrace();
