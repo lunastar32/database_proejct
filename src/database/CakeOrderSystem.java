@@ -177,8 +177,7 @@ public class CakeOrderSystem {
 							int quantity = itemRs.getInt("quantity");
 							int subtotal = price * quantity;
 							total += subtotal;
-							System.out.printf("케이크: %s | 가격: %d | 수량: %d | 소계: %d\n", cakeName, price, quantity,
-									subtotal);
+							System.out.printf("케이크: %s | 가격: %d | 수량: %d | 소계: %d\n", cakeName, price, quantity, subtotal);
 						}
 						System.out.println("---------------");
 						System.out.println("[총 주문 금액]: " + total + "원");
@@ -276,7 +275,7 @@ public class CakeOrderSystem {
 				System.out.print("고객 이름을 입력하세요: ");
 				String name = sc.nextLine();
 
-				String searchSQL = "SELECT customer_id, name, phone_number FROM customer WHERE name = ?";
+				String searchSQL = "SELECT customer_id, customer_name, phone_number FROM customer WHERE customer_name = ?";
 				try (PreparedStatement stmt = conn.prepareStatement(searchSQL)) {
 					stmt.setString(1, name);
 					try (ResultSet rs = stmt.executeQuery()) {
@@ -308,7 +307,7 @@ public class CakeOrderSystem {
 		}
 
 		// 고객 ID 확인
-		String query = "SELECT name FROM customer WHERE customer_id = ?";
+		String query = "SELECT customer_name FROM customer WHERE customer_id = ?";
 		try (PreparedStatement stmt = conn.prepareStatement(query)) {
 			stmt.setString(1, customerId);
 			try (ResultSet rs = stmt.executeQuery()) {
@@ -363,7 +362,7 @@ public class CakeOrderSystem {
 			System.out.print("새 전화번호를 입력하세요(변경하지 않는다면 동일한 번호 입력): "); // 전화번호 수정
 			String newPhone = sc.nextLine();
 
-			String updateSQL = "UPDATE customer SET name = ?, phone_number = ? WHERE customer_id = ?"; // 테이블에 수정사항 업데이트
+			String updateSQL = "UPDATE customer SET customer_name = ?, phone_number = ? WHERE customer_id = ?"; // 테이블에 수정사항 업데이트
 			try (PreparedStatement stmt = conn.prepareStatement(updateSQL)) {
 				stmt.setString(1, newName);
 				stmt.setString(2, newPhone);
@@ -396,8 +395,7 @@ public class CakeOrderSystem {
 	// 이름 입력을 통해 customerID를 찾고, 없을 경우 고객 정보 추가하는 함수
 	public static String findCustomerID(Connection conn, String name) {
 		Scanner sc = new Scanner(System.in);
-		String query = "SELECT customer_id FROM customer WHERE customer_name = ?"; // 고객 테이블에 name이 아니라 customer_name으로
-																					// 되어있어서 수정했습니다.
+		String query = "SELECT customer_id FROM customer WHERE customer_name = ?"; // 고객 테이블에 name이 아니라 customer_name으로 되어있어서 수정했습니다.
 		try (PreparedStatement stmt = conn.prepareStatement(query)) {
 			stmt.setString(1, name);
 			try (ResultSet rs = stmt.executeQuery()) {
@@ -422,10 +420,8 @@ public class CakeOrderSystem {
 
 	// customer 테이블에 데이터 추가 함수
 	private static void addCustomerTable(Connection conn, String customerID, String name, String phone_num) {
-		String sql = "INSERT INTO customer (customer_id,  customer_name, phone_number) VALUES (?, ?, ?)"; // 마찬가지로
-																											// customer_name
-																											// 으로
-																											// 수정했습니다.
+		String sql = "INSERT INTO customer (customer_id,  customer_name, phone_number) VALUES (?, ?, ?)"; // 마찬가지로 customer_name으로 수정했습니다.
+																											
 		try (PreparedStatement stmt = conn.prepareStatement(sql)) {
 			stmt.setString(1, customerID);
 			stmt.setString(2, name);
@@ -439,8 +435,7 @@ public class CakeOrderSystem {
 
 	// orders 테이블에 데이터 추가 함수
 	private static void addOrdersTable(Connection conn, String ordersID, String customerID, LocalDate date) {
-		String sql = "INSERT INTO orders (orders_id, customer_id, orders_date) VALUES (?, ?, ?)"; // OrderItem에 추가하는 쿼리로
-																									// 돼있어서 수정했습니다.
+		String sql = "INSERT INTO orders (orders_id, customer_id, orders_date) VALUES (?, ?, ?)"; // OrderItem에 추가하는 쿼리로 돼있어서 수정했습니다.
 		try (PreparedStatement stmt = conn.prepareStatement(sql)) {
 			stmt.setString(1, ordersID);
 			stmt.setString(2, customerID);
