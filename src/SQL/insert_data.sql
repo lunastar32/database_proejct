@@ -1,3 +1,9 @@
+delete from customer;
+delete from cake;
+delete from inventory;
+delete from orderitem;
+delete from orders;
+
 INSERT INTO customer VALUES
 ('U001', '이미정', '010-1234-4321'),
 ('U002', '용환승', '010-2345-5432'),

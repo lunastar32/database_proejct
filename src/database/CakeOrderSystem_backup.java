@@ -5,7 +5,7 @@ import java.util.InputMismatchException;
 import java.util.Scanner;
 import java.time.LocalDate;
 
-public class CakeOrderSystem {
+public class CakeOrderSystem_backup {
 	// 초기 인덱스 값 세팅
 	static int orders_index = 11;
 	static int customer_index = 11;
@@ -144,15 +144,10 @@ public class CakeOrderSystem {
 
 	// case 3 : 현재 주문 내역 상세 - orders_id, 전체 수량, 총 가격
 	private static void showOrderDetail(Connection conn, String orderId) {
-		String orderInfoSQL = "SELECT o.orders_date, c.customer_name AS customer_name " +
-							"FROM orders o " +
-							"JOIN customer c ON o.customer_id = c.customer_id " + 
-							"WHERE o.orders_id = ?";
-		String orderItemsSQL = "SELECT ca.cake_name AS cake_name, ca.price, oi.quantity " + 
-							"FROM orderitem oi " +
-							"JOIN cake ca ON oi.cake_id = ca.cake_id " + 
-							"WHERE oi.orders_id = ?";
-		
+		String orderInfoSQL = "SELECT o.orders_date, c.name AS customer_name " + "FROM orders o "
+				+ "JOIN customer c ON o.customer_id = c.customer_id " + "WHERE o.orders_id = ?";
+		String orderItemsSQL = "SELECT ca.name AS cake_name, ca.price, oi.quantity " + "FROM orderitem oi "
+				+ "JOIN cake ca ON oi.cake_id = ca.cake_id " + "WHERE oi.orders_id = ?";
 		try (PreparedStatement orderInfoStmt = conn.prepareStatement(orderInfoSQL);
 				PreparedStatement orderItemsStmt = conn.prepareStatement(orderItemsSQL)) {
 			// 1. 주문 기본 정보 조회
@@ -164,7 +159,7 @@ public class CakeOrderSystem {
 					System.out.println("\n[주문 상세 내역]");
 					System.out.println("고객 이름: " + customerName);
 					System.out.println("주문 날짜: " + orderDate);
-					System.out.println("---------------------------------");
+					System.out.println("---------------");
 					// 2. 주문한 케이크 목록 조회
 					orderItemsStmt.setString(1, orderId);
 					try (ResultSet itemRs = orderItemsStmt.executeQuery()) {
@@ -177,7 +172,7 @@ public class CakeOrderSystem {
 							total += subtotal;
 							System.out.printf("케이크: %s | 가격: %d | 수량: %d | 소계: %d\n", cakeName, price, quantity, subtotal);
 						}
-						System.out.println("---------------------------------");
+						System.out.println("---------------");
 						System.out.println("[총 주문 금액]: " + total + "원");
 					}
 				} else {
@@ -196,10 +191,9 @@ public class CakeOrderSystem {
 		// 주 번호 조회
 		System.out.print("수정 또는 삭제할 주문 ID를 입력하세요 (ex: O001): ");
 		String orderId = sc.nextLine();
-		System.out.println("1.주문 삭제 ");
+		System.out.print("1.주문 삭제 ");
 		System.out.println("2.주문 정보 수정 (주문한 케이크 수량 변경)");
 
-		System.out.print("메뉴 선택: ");
 		int choice = Integer.parseInt(sc.nextLine());
 		// 주문 삭제 선택
 		if (choice == 1) {
@@ -257,6 +251,7 @@ public class CakeOrderSystem {
 		}
 	}
 
+	// case 5 : 고객 정보 수정
 	// case 5: 고객 정보 삭제 및 수정 기능
 	private static void updateCustomer(Connection conn) {
 		// TODO Auto-generated method stub
@@ -281,7 +276,7 @@ public class CakeOrderSystem {
 						while (rs.next()) {
 							found = true;
 							String c_id = rs.getString("customer_id");
-							String c_name = rs.getString("customer_name");
+							String c_name = rs.getString("name");
 							String phone_num = rs.getString("phone_number");
 
 							// 전화번호 가운데 4자리 *로 마스킹 후 customer id, 이름, 전화번호 출력

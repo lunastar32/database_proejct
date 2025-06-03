@@ -1,10 +1,11 @@
-USE cake1;
+USE project;
 
 DROP TABLE IF EXISTS orderitem;
 DROP TABLE IF EXISTS inventory;
 DROP TABLE IF EXISTS orders;
 DROP TABLE IF EXISTS customer;
 DROP TABLE IF EXISTS cake;
+DROP VIEW IF EXISTS customer_order_view;
 
 -- 고객 테이블
 CREATE TABLE customer (
@@ -49,3 +50,17 @@ CREATE TABLE orderitem (
     foreign key(orders_id) references orders(orders_id),
     foreign key(cake_id) references cake(cake_id)
 );
+
+-- 메뉴2번 . 주문 내역 조회
+-- view 작성
+CREATE VIEW customer_order_view AS
+SELECT 
+    o.orders_id,
+    o.customer_id,
+    o.orders_date,
+    c.customer_name
+FROM orders o
+JOIN customer c ON o.customer_id = c.customer_id;
+
+-- 케이크 메뉴 및 내용 조회
+
