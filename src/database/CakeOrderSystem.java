@@ -3,7 +3,6 @@ package database;
 import java.sql.*;
 import java.util.InputMismatchException;
 import java.util.Scanner;
-import javax.swing.JOptionPane;
 import java.time.LocalDate;
 
 public class CakeOrderSystem {
@@ -476,7 +475,8 @@ public class CakeOrderSystem {
 
 		//SQLExecutor.executeSQLFile(conn, "sql/create_table.sql"); // 테이블 만들기 
 		//SQLExecutor.executeSQLFile(conn, "sql/insert_data.sql"); // 데이터 넣기
-		//위에 코드 두줄은 제 로컬 컴퓨터에서 돌아가게 하려고 넣은 코드 입니다. 
+		//위에 코드 두줄은 제 로컬 컴퓨터에서 돌아가게 하려고 넣은 코드 입니다. 혹시 해당 코드 오류 발생 시 주석처리나 삭제해주세요..
+
 		초기화면();
 		메뉴(conn); // DB 연결 이어서 가져감
 		// sql_connection.close();
