@@ -54,7 +54,7 @@ public class CakeOrderSystem {
 				showCustomerOrder(conn, name);
 				break;
 			case 3: // 현재 주문 내역 상세
-				System.out.print("주문ID 입력: ");
+				System.out.print("주문ID 입력(ex)O001): ");
 				String orderId = scanner.nextLine();
 				showOrderDetail(conn, orderId);
 				break;
@@ -74,7 +74,6 @@ public class CakeOrderSystem {
 
 	// case 1 : 케이크 주문하기
 	private static void addOrder(Connection conn) {
-		// 케이크 메뉴 및 재고 현황 출력
 		Scanner sc = new Scanner(System.in);
 		// 고객 정보 추가
 		System.out.print("이름을 입력하세요: ");
@@ -86,6 +85,12 @@ public class CakeOrderSystem {
 		LocalDate date = LocalDate.now(); // 현재 날짜 불러오기
 		addOrdersTable(conn, ordersID, customerID, date);
 		boolean more = true; // 주문을 계속할 건지 확인하는 변수
+		
+		// 케이크 메뉴 및 재고 현황 출력
+		
+		// 케이크 판매 순위 출력
+		showBestCake(conn);
+		
 		while (more) {
 			System.out.print("주문할 케이크 ID를 입력하세요(ex):C001):");
 			String cakeID = sc.nextLine();
@@ -96,6 +101,7 @@ public class CakeOrderSystem {
 				// orderitem 테이블에 data 추가
 				String orderItemID = "I0" + Integer.toString(orderitem_index);
 				addOrderitemTable(conn, orderItemID, ordersID, cakeID, quantity);
+				orderitem_index++;
 				// 재고 감소
 //				updateInventoryTable(conn, quantity, cakeID);
 //				String updateStockSQL = "UPDATE inventory SET quantity_available = quantity_available - ? WHERE cake_id = ?";
@@ -113,6 +119,35 @@ public class CakeOrderSystem {
 				System.out.println("존재하지 않는 케이크 ID입니다. 다시 입력해주세요.");
 			}
 		}
+	}
+
+	public static void showBestCake(Connection conn) {
+		// 가장 많이 팔린 케이크 순위 query 문
+	    String query = "SELECT c.cake_id, c.cake_name, SUM(oi.quantity) AS total_sold "
+	    		+ "FROM orderitem oi "
+	    		+ "JOIN cake c ON oi.cake_id = c.cake_id "
+	    		+ "GROUP BY c.cake_id, c.cake_name "
+	    		+ "ORDER BY total_sold DESC "
+	    		+ "LIMIT 5";
+
+	    try (Statement stmt = conn.createStatement();
+	         ResultSet rs = stmt.executeQuery(query)) {
+
+	        System.out.println("\n[가장 많이 팔린 케이크 목록]");
+	        System.out.println("------------------------------------");
+	        System.out.printf("%-10s %-20s | %s\n", "케이크ID", "케이크 이름", "재고");
+	        System.out.println("------------------------------------");
+
+	        while (rs.next()) {
+	        	String cakeID = rs.getString("cake_id");
+	            String cakeName = rs.getString("cake_name");
+	            int totalSold = rs.getInt("total_sold");
+	            System.out.printf("%-10s %-20s | %d\n", cakeID, cakeName, totalSold);
+	        }
+	        System.out.println("------------------------------------");
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	    }
 	}
 
 	// case 2 : 전체 주문 목록 조회 - - orders_ID와 orders_date 확인가능
