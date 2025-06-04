@@ -6,6 +6,7 @@ DROP TABLE IF EXISTS orders;
 DROP TABLE IF EXISTS customer;
 DROP TABLE IF EXISTS cake;
 DROP VIEW IF EXISTS customer_order_view;
+DROP VIEW IF ExISTS cake_view;
 
 -- 고객 테이블
 CREATE TABLE customer (
@@ -63,4 +64,11 @@ FROM orders o
 JOIN customer c ON o.customer_id = c.customer_id;
 
 -- 케이크 메뉴 및 내용 조회
-
+CREATE VIEW cake_view AS
+SELECT 
+    c.cake_id,
+    c.cake_name,
+    c.price,
+    i.quantity_available AS quantity
+FROM cake c
+JOIN inventory i ON c.cake_id = i.cake_id;

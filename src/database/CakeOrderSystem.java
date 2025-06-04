@@ -15,8 +15,6 @@ public class CakeOrderSystem {
 		System.out.println("============================");
 		System.out.printf("\t케이크 주문 시스템\n");
 		System.out.println("============================");
-		// 케이크 메뉴 및 재고 현황표
-		// 인기 케이크 순위
 	}
 
 	public static void 메뉴(Connection conn) {
@@ -87,7 +85,7 @@ public class CakeOrderSystem {
 		boolean more = true; // 주문을 계속할 건지 확인하는 변수
 		
 		// 케이크 메뉴 및 재고 현황 출력
-		
+		showCakeMenu(conn);
 		// 케이크 판매 순위 출력
 		showBestCake(conn);
 		
@@ -98,27 +96,89 @@ public class CakeOrderSystem {
 				// 주문 계속 진행
 				System.out.print("수량을 입력하세요: ");
 				int quantity = Integer.parseInt(sc.nextLine());
-				// orderitem 테이블에 data 추가
-				String orderItemID = "I0" + Integer.toString(orderitem_index);
-				addOrderitemTable(conn, orderItemID, ordersID, cakeID, quantity);
-				orderitem_index++;
-				// 재고 감소
-//				updateInventoryTable(conn, quantity, cakeID);
-//				String updateStockSQL = "UPDATE inventory SET quantity_available = quantity_available - ? WHERE cake_id = ?";
-//          try (PreparedStatement ps = conn.prepareStatement(updateStockSQL)) {
-//      	    ps.setInt(1, quantity);
-//            ps.setString(2, cakeID);
-//            ps.executeUpdate();
-//					}
-				System.out.print("더 주문하시겠습니까? (Y/N): ");
-				String answer = sc.nextLine().toUpperCase();
-				if (!answer.equals("Y")) {
-					more = false;
+				
+				// 재고가 존재하는지 확인
+				int stock = getAvailableStock(conn, cakeID);
+				if(stock>=quantity) {
+					// orderitem 테이블에 data 추가
+					String orderItemID = "I0" + Integer.toString(orderitem_index);
+					addOrderitemTable(conn, orderItemID, ordersID, cakeID, quantity);
+					orderitem_index++;
+					
+					// 재고 감소
+					updateInventoryTable(conn, quantity, cakeID);
+					
+					System.out.print("더 주문하시겠습니까? (Y/N): ");
+					String answer = sc.nextLine().toUpperCase();
+					if (!answer.equals("Y")) {
+						more = false;
+					}
+				}
+				else {
+					System.out.println("재고가 부족합니다. 현재 재고: " + stock + "개");
+	                System.out.println("다시 케이크를 선택해주세요.");
 				}
 			} else { // 케이크 ID가 DB에 존재하지 않으면
 				System.out.println("존재하지 않는 케이크 ID입니다. 다시 입력해주세요.");
 			}
 		}
+	}
+
+	private static void updateInventoryTable(Connection conn, int quantity, String cakeID) {
+		// 재고 업데이트 query문
+		String sql = "UPDATE inventory SET quantity_available = quantity_available - ? WHERE cake_id = ?";
+	    try (PreparedStatement ps = conn.prepareStatement(sql)) {
+	        ps.setInt(1, quantity);
+	        ps.setString(2, cakeID);
+	        ps.executeUpdate();
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	    }
+	}
+
+	private static int getAvailableStock(Connection conn, String cakeID) {
+		// inventory 테이블에서 재고 불러오는 query문
+		String sql = "SELECT quantity_available FROM inventory WHERE cake_id = ?";
+	    try (PreparedStatement ps = conn.prepareStatement(sql)) {
+	        ps.setString(1, cakeID);
+	        ResultSet rs = ps.executeQuery();
+	        if (rs.next()) {
+	            return rs.getInt("quantity_available");
+	        }
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	    }
+		return 0; // 존재하지 않는 경우, 에러가 생긴 경우
+	}
+
+	private static void showCakeMenu(Connection conn) {
+		// cake_view라는 view에서 정보 가져오는 query문
+		String query = "SELECT cake_id, cake_name, price, quantity FROM cake_view";
+
+	    try (Statement stmt = conn.createStatement();
+	    	ResultSet rs = stmt.executeQuery(query)) {
+
+	    	// 케이크 메뉴표 출력
+	        System.out.println("[케이크 메뉴표]");
+	        System.out.println("-------------------------------------------------");
+	        System.out.printf("%-10s %-20s %-8s %-5s%n", "케이크ID", "케이크 이름", "가격", "재고");
+	        System.out.println("-------------------------------------------------");
+
+	        while (rs.next()) {
+	            String id = rs.getString("cake_id");
+	            String name = rs.getString("cake_name");
+	            int price = rs.getInt("price");
+	            int quantity = rs.getInt("quantity");
+
+	            System.out.printf("%-10s %-20s %-8d %-5d%n", id, name, price, quantity);
+	        }
+	        System.out.println("-------------------------------------------------");
+
+	    } catch (SQLException e) {
+	        System.out.println("케이크 메뉴 조회 실패");
+	        e.printStackTrace();
+	    }
+		
 	}
 
 	public static void showBestCake(Connection conn) {
@@ -135,7 +195,7 @@ public class CakeOrderSystem {
 
 	        System.out.println("\n[가장 많이 팔린 케이크 목록]");
 	        System.out.println("------------------------------------");
-	        System.out.printf("%-10s %-20s | %s\n", "케이크ID", "케이크 이름", "재고");
+	        System.out.printf("%-10s %-20s | %s\n", "케이크ID", "케이크 이름", "판매수량");
 	        System.out.println("------------------------------------");
 
 	        while (rs.next()) {
@@ -183,7 +243,7 @@ public class CakeOrderSystem {
 							"FROM orders o " +
 							"JOIN customer c ON o.customer_id = c.customer_id " + 
 							"WHERE o.orders_id = ?";
-		String orderItemsSQL = "SELECT ca.cake_name AS cake_name, ca.price, oi.quantity " + 
+		String orderItemsSQL = "SELECT ca.cake_name AS cake_name, ca.cake_id AS cake_id, ca.price, oi.quantity " + 
 							"FROM orderitem oi " +
 							"JOIN cake ca ON oi.cake_id = ca.cake_id " + 
 							"WHERE oi.orders_id = ?";
@@ -206,11 +266,12 @@ public class CakeOrderSystem {
 						int total = 0;
 						while (itemRs.next()) {
 							String cakeName = itemRs.getString("cake_name");
+							String CakeID = itemRs.getString("cake_id");
 							int price = itemRs.getInt("price");
 							int quantity = itemRs.getInt("quantity");
 							int subtotal = price * quantity;
 							total += subtotal;
-							System.out.printf("케이크: %s | 가격: %d | 수량: %d | 소계: %d\n", cakeName, price, quantity, subtotal);
+							System.out.printf("케이크: %s(%s) | 가격: %d | 수량: %d | 소계: %d\n", cakeName, CakeID, price, quantity, subtotal);
 						}
 						System.out.println("---------------------------------");
 						System.out.println("[총 주문 금액]: " + total + "원");
@@ -262,7 +323,6 @@ public class CakeOrderSystem {
 			System.out.print("수정하고 싶은 케이크 ID를 입력하세요 (ex: C001): ");
 			String oldCakeId = sc.nextLine();
 
-			System.out.println("새로운 케이크 ID를 입력하세요 (케이크 종류를 변경하지 않는다면 기존의 케이크 ID를 적어주세요): ");
 			System.out.println("새로운 케이크 ID를 입력하세요 (변경하지 않는다면 기존 케이크 ID 입력): ");
 			String newCakeId = sc.nextLine();
 
@@ -453,7 +513,8 @@ public class CakeOrderSystem {
 
 	// customer 테이블에 데이터 추가 함수
 	private static void addCustomerTable(Connection conn, String customerID, String name, String phone_num) {
-		String sql = "INSERT INTO customer (customer_id,  customer_name, phone_number) VALUES (?, ?, ?)"; // 마찬가지로 customer_name으로 수정했습니다.
+		// customer 테이블 insert query문
+		String sql = "INSERT INTO customer (customer_id,  customer_name, phone_number) VALUES (?, ?, ?)";
 																											
 		try (PreparedStatement stmt = conn.prepareStatement(sql)) {
 			stmt.setString(1, customerID);
@@ -468,6 +529,7 @@ public class CakeOrderSystem {
 
 	// orders 테이블에 데이터 추가 함수
 	private static void addOrdersTable(Connection conn, String ordersID, String customerID, LocalDate date) {
+		// orders 테이블에 데이터 insert query문
 		String sql = "INSERT INTO orders (orders_id, customer_id, orders_date) VALUES (?, ?, ?)"; // OrderItem에 추가하는 쿼리로 돼있어서 수정했습니다.
 		try (PreparedStatement stmt = conn.prepareStatement(sql)) {
 			stmt.setString(1, ordersID);
@@ -482,8 +544,8 @@ public class CakeOrderSystem {
 	}
 
 	// orderitem 테이블에 데이터 추가 함수
-	private static void addOrderitemTable(Connection conn, String orderItemID, String ordersID, String cakeID,
-			int quantity) {
+	private static void addOrderitemTable(Connection conn, String orderItemID, String ordersID, String cakeID, int quantity) {
+		// orderitem 테이블에 데이터 insert 함수
 		String sql = "INSERT INTO orderitem (order_item_id, orders_id, cake_id, quantity) VALUES (?, ?, ?, ?)";
 		try (PreparedStatement stmt = conn.prepareStatement(sql)) {
 			stmt.setString(1, orderItemID);
@@ -503,10 +565,9 @@ public class CakeOrderSystem {
 
 		SQLExecutor.executeSQLFile(conn, "src/sql/create_table.sql"); // 테이블 만들기 
 		SQLExecutor.executeSQLFile(conn, "src/sql/insert_data.sql"); // 데이터 넣기
-		//위에 코드 두줄은 제 로컬 컴퓨터에서 돌아가게 하려고 넣은 코드 입니다. 혹시 해당 코드 오류 발생 시 주석처리나 삭제해주세요..
 
 		초기화면();
 		메뉴(conn); // DB 연결 이어서 가져감
-		// sql_connection.close();
+		sql_connection.close();
 	}
 }

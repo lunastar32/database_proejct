@@ -1,8 +1,10 @@
-delete from customer;
-delete from cake;
+SET SQL_SAFE_UPDATES = 0;
+
 delete from inventory;
 delete from orderitem;
+delete from cake;
 delete from orders;
+delete from customer;
 
 INSERT INTO customer VALUES
 ('U001', '이미정', '010-1234-4321'),
@@ -42,17 +44,17 @@ INSERT INTO cake VALUES
 ('C011', '클래식 갸또 쇼콜라', 7200);
 
 INSERT INTO inventory VALUES
-('C001', 10),
-('C002', 10),
-('C003', 10),
-('C004', 10),
-('C005', 10),
-('C006', 10),
-('C007', 10),
-('C008', 10),
-('C009', 10),
-('C010', 10),
-('C011', 10);
+('C001', 6),
+('C002', 5),
+('C003', 8),
+('C004', 7),
+('C005', 9),
+('C006', 8),
+('C007', 8),
+('C008', 9),
+('C009', 9),
+('C010', 8),
+('C011', 8);
 
 INSERT INTO orderitem VALUES
 ('I001', 'O001', 'C006', 2),
