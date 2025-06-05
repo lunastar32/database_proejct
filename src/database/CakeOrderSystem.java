@@ -496,7 +496,7 @@ public class CakeOrderSystem {
 					return rs.getString("customer_id");
 				} else { // 고객 정보가 존재하지 않을 경우
 					System.out.println("고객 정보가 존재하지 않아 새로 추가합니다.");
-					System.out.println("전화번호를 입력하세요(ex)010-1111-2222): ");
+					System.out.print("전화번호를 입력하세요(ex)010-1111-2222): ");
 					String phone_num = sc.nextLine();
 					String customerID = "U0" + Integer.toString(customer_index);
 					customer_index++; // 변수 값 증가 -> 이후에 적용
