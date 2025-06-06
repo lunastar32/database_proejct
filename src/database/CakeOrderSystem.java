@@ -290,12 +290,11 @@ public class CakeOrderSystem {
 		Scanner sc = new Scanner(System.in);
 
 		// 주 번호 조회
-		System.out.print("수정 또는 삭제할 주문 ID를 입력하세요 (ex: O001): ");
+		System.out.println("수정 또는 삭제할 주문 ID를 입력하세요 (ex: O001): ");
 		String orderId = sc.nextLine();
 		System.out.println("1.주문 삭제 ");
 		System.out.println("2.주문 정보 수정 (주문한 케이크 및 수량 변경)");
-
-		System.out.print("메뉴 선택: ");
+		System.out.println("메뉴 선택: ");
 		int choice = Integer.parseInt(sc.nextLine());
 		// 주문 삭제 선택
 		if (choice == 1) {
@@ -320,7 +319,7 @@ public class CakeOrderSystem {
 		}
 		// 주문 내역 수정 선택
 		else if (choice == 2) {
-			System.out.print("수정하고 싶은 케이크 ID를 입력하세요 (ex: C001): ");
+			System.out.println("수정하고 싶은 케이크 ID를 입력하세요 (ex: C001): ");
 			String oldCakeId = sc.nextLine();
 
 			System.out.println("새로운 케이크 ID를 입력하세요 (변경하지 않는다면 기존 케이크 ID 입력): ");
@@ -331,7 +330,7 @@ public class CakeOrderSystem {
 				return;
 			}
 
-			System.out.print("새로운 수량을 입력하세요: ");
+			System.out.println("새로운 수량을 입력하세요: ");
 			int newQty = Integer.parseInt(sc.nextLine());
 			String updateSQL = "UPDATE orderitem SET cake_id = ?, quantity = ? WHERE orders_id = ? AND cake_id = ?";
 			try (PreparedStatement stmt = conn.prepareStatement(updateSQL)) {
@@ -359,13 +358,13 @@ public class CakeOrderSystem {
 		String customerId = null;
 
 		while (true) {
-			System.out.print("수정 또는 삭제할 고객 ID를 입력하세요(ex: U001, ID 찾기를 원하시면 '검색' 을 입력하세요): ");
+			System.out.println("수정 또는 삭제할 고객 ID를 입력하세요(ex: U001, ID 찾기를 원하시면 '검색' 을 입력하세요): ");
 			String input = sc.nextLine();
 
 			// ID찾기 선택
 			if (input.equalsIgnoreCase("검색")) {
 				// 고객 이름으로 ID 검색
-				System.out.print("고객 이름을 입력하세요: ");
+				System.out.println("고객 이름을 입력하세요: ");
 				String name = sc.nextLine();
 
 				String searchSQL = "SELECT customer_id, customer_name, phone_number FROM customer WHERE customer_name = ?";
@@ -415,8 +414,9 @@ public class CakeOrderSystem {
 		}
 
 		// 삭제 또는 수정 선택
-		System.out.print("1.고객 정보 삭제 ");
+		System.out.println("1.고객 정보 삭제 ");
 		System.out.println("2.고객 정보 수정");
+		System.out.println("메뉴 선택: ");
 		int choice = Integer.parseInt(sc.nextLine());
 
 		// 고객 정보 삭제 선택
@@ -450,9 +450,9 @@ public class CakeOrderSystem {
 		}
 		// 고객 정보 수정 선택
 		else if (choice == 2) {
-			System.out.print("새 이름을 입력하세요(변경하지 않는다면 동일한 이름 입력): "); // 이름 수정
+			System.out.println("새 이름을 입력하세요(변경하지 않는다면 동일한 이름 입력): "); // 이름 수정
 			String newName = sc.nextLine();
-			System.out.print("새 전화번호를 입력하세요(변경하지 않는다면 동일한 번호 입력): "); // 전화번호 수정
+			System.out.println("새 전화번호를 입력하세요(변경하지 않는다면 동일한 번호 입력): "); // 전화번호 수정
 			String newPhone = sc.nextLine();
 
 			String updateSQL = "UPDATE customer SET customer_name = ?, phone_number = ? WHERE customer_id = ?"; // 테이블에 수정사항 업데이트
