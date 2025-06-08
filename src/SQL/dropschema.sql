@@ -1,0 +1,8 @@
+DROP VIEW IF EXISTS customer_order_view;
+DROP VIEW IF EXISTS cake_view;
+
+DROP TABLE IF EXISTS orderitem;
+DROP TABLE IF EXISTS inventory;
+DROP TABLE IF EXISTS orders;
+DROP TABLE IF EXISTS customer;
+DROP TABLE IF EXISTS cake;

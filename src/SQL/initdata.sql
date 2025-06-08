@@ -1,10 +1,10 @@
 SET SQL_SAFE_UPDATES = 0;
 
-delete from inventory;
-delete from orderitem;
-delete from cake;
-delete from orders;
-delete from customer;
+DELETE FROM orderitem;
+DELETE FROM inventory;
+DELETE FROM orders;
+DELETE FROM customer;
+DELETE FROM cake;
 
 INSERT INTO customer VALUES
 ('U001', '이미정', '010-1234-4321'),
@@ -73,4 +73,3 @@ INSERT INTO orderitem VALUES
 ('I014', 'O009', 'C004', 1),
 ('I015', 'O009', 'C007', 1),
 ('I016', 'O010', 'C011', 1);
-

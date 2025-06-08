@@ -563,8 +563,9 @@ public class CakeOrderSystem {
 	public static void main(String[] args) {
 		Connection conn = sql_connection.getConnection(); // DB 연결
 
-		SQLExecutor.executeSQLFile(conn, "src/sql/create_table.sql"); // 테이블 만들기 
-		SQLExecutor.executeSQLFile(conn, "src/sql/insert_data.sql"); // 데이터 넣기
+		SQLExecutor.executeSQLFile(conn, "src/sql/dropschema.sql"); // drop 테이블
+		SQLExecutor.executeSQLFile(conn, "src/sql/createschema.sql"); // 테이블 만들기 
+		SQLExecutor.executeSQLFile(conn, "src/sql/initdata.sql"); // 데이터 넣기
 
 		초기화면();
 		메뉴(conn); // DB 연결 이어서 가져감
