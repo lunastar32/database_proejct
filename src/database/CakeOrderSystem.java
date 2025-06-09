@@ -302,7 +302,7 @@ public class CakeOrderSystem {
 		System.out.print("수정 또는 삭제할 주문 ID를 입력하세요 (ex: O001): ");
 		String orderId = sc.nextLine();
 		System.out.println("1.주문 삭제 ");
-		System.out.println("2.주문 정보 수정 (주문한 케이크 수량 변경)");
+		System.out.println("2.주문 정보 수정 (케이크 및 수량 변경)");
 
 		System.out.print("메뉴 선택: ");
 		int choice = Integer.parseInt(sc.nextLine());
