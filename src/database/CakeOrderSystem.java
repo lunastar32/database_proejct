@@ -243,11 +243,11 @@ public class CakeOrderSystem {
 							"FROM orders o " +
 							"JOIN customer c ON o.customer_id = c.customer_id " + 
 							"WHERE o.orders_id = ?";
-		String orderItemsSQL = "SELECT ca.cake_name AS cake_name, ca.cake_id AS cake_id, ca.price, oi.quantity " + 
+		String orderItemsSQL = "SELECT ca.cake_id, ca.cake_name AS cake_name, ca.price AS price, SUM(oi.quantity) AS total_quantity, SUM(oi.quantity*ca.price) AS total_price " +
 							"FROM orderitem oi " +
-							"JOIN cake ca ON oi.cake_id = ca.cake_id " + 
-							"WHERE oi.orders_id = ?";
-		
+							"JOIN cake ca on oi.cake_id = ca.cake_id " +
+							"WHERE oi.orders_id = ? " +
+							"GROUP BY ca.cake_name, ca.price, ca.cake_id " ;
 		try (PreparedStatement orderInfoStmt = conn.prepareStatement(orderInfoSQL);
 				PreparedStatement orderItemsStmt = conn.prepareStatement(orderItemsSQL)) {
 			// 1. 주문 기본 정보 조회
@@ -268,8 +268,8 @@ public class CakeOrderSystem {
 							String cakeName = itemRs.getString("cake_name");
 							String CakeID = itemRs.getString("cake_id");
 							int price = itemRs.getInt("price");
-							int quantity = itemRs.getInt("quantity");
-							int subtotal = price * quantity;
+							int quantity = itemRs.getInt("total_quantity");
+							int subtotal = itemRs.getInt("total_price");
 							total += subtotal;
 							System.out.printf("케이크: %s(%s) | 가격: %d | 수량: %d | 소계: %d\n", cakeName, CakeID, price, quantity, subtotal);
 						}
