@@ -127,13 +127,31 @@ public class CakeOrderSystem {
 	private static void updateInventoryTable(Connection conn, int quantity, String cakeID) {
 		// 재고 업데이트 query문
 		String sql = "UPDATE inventory SET quantity_available = quantity_available - ? WHERE cake_id = ?";
-	    try (PreparedStatement ps = conn.prepareStatement(sql)) {
-	        ps.setInt(1, quantity);
-	        ps.setString(2, cakeID);
-	        ps.executeUpdate();
-	    } catch (SQLException e) {
-	        e.printStackTrace();
-	    }
+		try {
+			conn.setAutoCommit(false); // 트랜잭션 시작
+
+			try (PreparedStatement ps = conn.prepareStatement(sql)) {
+				ps.setInt(1, quantity);
+				ps.setString(2, cakeID);
+				ps.executeUpdate();
+			}
+			conn.commit(); // 성공 시 커밋
+
+		} catch (SQLException e) {
+			try {
+				conn.rollback();// 실패시 롤백
+				System.out.println("재고 감소에 실패하여 롤백합니다.");
+			} catch (SQLException rollbackEx) {
+				rollbackEx.printStackTrace();
+			}
+			e.printStackTrace();
+		} finally {
+			try {
+				conn.setAutoCommit(true); // 자동 커밋 복구
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		}
 	}
 
 	private static int getAvailableStock(Connection conn, String cakeID) {
@@ -243,10 +261,12 @@ public class CakeOrderSystem {
 							"FROM orders o " +
 							"JOIN customer c ON o.customer_id = c.customer_id " + 
 							"WHERE o.orders_id = ?";
-		String orderItemsSQL = "SELECT ca.cake_name AS cake_name, ca.cake_id AS cake_id, ca.price, oi.quantity " + 
+		String orderItemsSQL = "SELECT ca.cake_id, ca.cake_name AS cake_name, ca.price AS price, " +
+							"SUM(oi.quantity) AS total_quantity, SUM(oi.quantity * ca.price) AS total_price " +
 							"FROM orderitem oi " +
 							"JOIN cake ca ON oi.cake_id = ca.cake_id " + 
-							"WHERE oi.orders_id = ?";
+							"WHERE oi.orders_id = ? " +
+							"GROUP BY ca.cake_name, ca.price, ca.cake_id";
 		
 		try (PreparedStatement orderInfoStmt = conn.prepareStatement(orderInfoSQL);
 				PreparedStatement orderItemsStmt = conn.prepareStatement(orderItemsSQL)) {
@@ -263,13 +283,13 @@ public class CakeOrderSystem {
 					// 2. 주문한 케이크 목록 조회
 					orderItemsStmt.setString(1, orderId);
 					try (ResultSet itemRs = orderItemsStmt.executeQuery()) {
-						int total = 0;
+						int total=0;
 						while (itemRs.next()) {
-							String cakeName = itemRs.getString("cake_name");
+							String cakeName = itemRs.getString("ca.cake_name");
 							String CakeID = itemRs.getString("cake_id");
 							int price = itemRs.getInt("price");
-							int quantity = itemRs.getInt("quantity");
-							int subtotal = price * quantity;
+							int quantity = itemRs.getInt("total_quantity");
+							int subtotal = itemRs.getInt("total_price");
 							total += subtotal;
 							System.out.printf("케이크: %s(%s) | 가격: %d | 수량: %d | 소계: %d\n", cakeName, CakeID, price, quantity, subtotal);
 						}
@@ -293,7 +313,7 @@ public class CakeOrderSystem {
 		System.out.print("수정 또는 삭제할 주문 ID를 입력하세요 (ex: O001): ");
 		String orderId = sc.nextLine();
 		System.out.println("1.주문 삭제 ");
-		System.out.println("2.주문 정보 수정 (주문한 케이크 수량 변경)");
+		System.out.println("2.주문 정보 수정 (케이크 및 수량 변경)");
 
 		System.out.print("메뉴 선택: ");
 		int choice = Integer.parseInt(sc.nextLine());
@@ -323,7 +343,7 @@ public class CakeOrderSystem {
 			System.out.print("수정하고 싶은 케이크 ID를 입력하세요 (ex: C001): ");
 			String oldCakeId = sc.nextLine();
 
-			System.out.println("새로운 케이크 ID를 입력하세요 (변경하지 않는다면 기존 케이크 ID 입력): ");
+			System.out.print("새로운 케이크 ID를 입력하세요 (변경하지 않는다면 기존 케이크 ID 입력): ");
 			String newCakeId = sc.nextLine();
 
 			if (!isValidCakeId(conn, newCakeId)) {
@@ -334,21 +354,41 @@ public class CakeOrderSystem {
 			System.out.print("새로운 수량을 입력하세요: ");
 			int newQty = Integer.parseInt(sc.nextLine());
 			String updateSQL = "UPDATE orderitem SET cake_id = ?, quantity = ? WHERE orders_id = ? AND cake_id = ?";
-			try (PreparedStatement stmt = conn.prepareStatement(updateSQL)) {
-				stmt.setString(1, newCakeId);
-				stmt.setInt(2, newQty);
-				stmt.setString(3, orderId);
-				stmt.setString(4, oldCakeId);
+			try {
+				conn.setAutoCommit(false); // 트랜잭션 시작
 
-				int rows = stmt.executeUpdate();
-				if (rows > 0) {
-					System.out.println("주문이 수정되었습니다.");
-				} else {
-					System.out.println("해당 주문 또는 케이크 ID를 찾을 수 없습니다.");
+				try (PreparedStatement stmt = conn.prepareStatement(updateSQL)) {
+					stmt.setString(1, newCakeId);
+					stmt.setInt(2, newQty);
+					stmt.setString(3, orderId);
+					stmt.setString(4, oldCakeId);
+
+					int rows = stmt.executeUpdate();
+					if (rows > 0) {
+						conn.commit(); // 성공 시 커밋
+						System.out.println("주문이 수정되었습니다.");
+					} else {
+						System.out.println("해당 주문 또는 케이크 ID를 찾을 수 없습니다.");
+						conn.rollback(); // 실패 시 롤백
+					}
 				}
 			} catch (SQLException e) {
+				try {
+					conn.rollback(); // 예외 발생 시 롤백
+					System.out.println("오류 발생으로 주문 수정 작업을 취소했습니다.");
+				} catch (SQLException rollbackEx) {
+					rollbackEx.printStackTrace();
+				}
 				e.printStackTrace();
+			} finally {
+				try {
+					conn.setAutoCommit(true); // 트랜잭션 원복
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
 			}
+		} else {
+			System.out.println("잘못된 선택입니다.");
 		}
 	}
 
@@ -415,8 +455,9 @@ public class CakeOrderSystem {
 		}
 
 		// 삭제 또는 수정 선택
-		System.out.print("1.고객 정보 삭제 ");
+		System.out.println("1.고객 정보 삭제");
 		System.out.println("2.고객 정보 수정");
+		System.out.print("메뉴 선택: ");
 		int choice = Integer.parseInt(sc.nextLine());
 
 		// 고객 정보 삭제 선택
@@ -456,18 +497,38 @@ public class CakeOrderSystem {
 			String newPhone = sc.nextLine();
 
 			String updateSQL = "UPDATE customer SET customer_name = ?, phone_number = ? WHERE customer_id = ?"; // 테이블에 수정사항 업데이트
-			try (PreparedStatement stmt = conn.prepareStatement(updateSQL)) {
-				stmt.setString(1, newName);
-				stmt.setString(2, newPhone);
-				stmt.setString(3, customerId);
-				stmt.executeUpdate();
+			try {
+				conn.setAutoCommit(false); // 트랜잭션 시작
 
-				System.out.println("고객 정보가 수정되었습니다.");
+				try (PreparedStatement stmt = conn.prepareStatement(updateSQL)) {
+					stmt.setString(1, newName);
+					stmt.setString(2, newPhone);
+					stmt.setString(3, customerId);
+					int rows = stmt.executeUpdate();
+
+					if (rows > 0) {
+						conn.commit(); // 성공 시 커밋
+						System.out.println("고객 정보가 수정되었습니다.");
+					} else {
+						System.out.println("고객 정보를 찾을 수 없습니다.");
+						conn.rollback(); // 실패 시 롤백
+					}
+				}
 			} catch (SQLException e) {
+				try {
+					conn.rollback();
+					System.out.println("오류 발생으로 고객 정보 수정 작업을 취소했습니다.");
+				} catch (SQLException rollbackEx) {
+					rollbackEx.printStackTrace();
+				}
 				e.printStackTrace();
+			} finally {
+				try {
+					conn.setAutoCommit(true); // 자동 커밋 복원
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
 			}
-		} else {
-			System.out.println("잘못된 선택입니다.");
 		}
 	}
 
